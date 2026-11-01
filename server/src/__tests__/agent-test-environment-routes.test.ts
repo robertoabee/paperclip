@@ -451,7 +451,7 @@ describe("agent test-environment route", () => {
     unregisterServerAdapter("hermes_gateway");
     registerServerAdapter({ ...externalAdapter, type: "hermes_gateway" });
     const agentId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-    const routerBinding = { mode: "router", connectionId: "unconfigured-pool" };
+    const routerBinding = { mode: "router", connectionId: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb" };
     const adapterConfig = { apiBaseUrl: "https://hermes.example.com" };
     mockAgentService.getById.mockResolvedValue({ id: agentId, companyId: "company-1", adapterType: "hermes_gateway", adapterConfig,
       runtimeConfig: source === "saved" ? { aiConnection: routerBinding } : {} });
