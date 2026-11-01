@@ -13,13 +13,30 @@ Never substitute a mutable tag. The workflow publishes only after the exact
 local image passes isolated health, empty-company, UI and restart checks.
 Only linux/amd64 is qualified by this workflow.
 
-The smoke has no external network, published ports, host mounts, named volumes,
-production data, provider credentials or live Hermes connection. Its embedded
-PostgreSQL is disposable tmpfs. A restart check proves fresh boot, not persistent
-backup restoration. The image route smoke uses a synthetic loopback Hermes health endpoint,
-checks stale router bypass and response redaction. It does not prove a
-live production heartbeat. Full heartbeat qualification and a restore rehearsal
-with synthetic records remain required before production approval.
+The isolated qualification completed successfully on source commit
+`5aeaffcfdf7c489322caeea20a091f5e2c7961ba`:
+
+- Docker runtime smoke ran with `--network none`, tmpfs-only application data,
+  no host mounts, named volumes, published ports, production data, provider
+  credentials or live Hermes connection.
+- The real application route reached a synthetic loopback Hermes Gateway with
+  no managed provider binding, bypassed a stale router selection and redacted
+  the synthetic key.
+- The real Paperclip heartbeat route invoked the Hermes Gateway
+  `POST /v1/runs` endpoint and completed through SSE; the synthetic key was
+  not exposed in the heartbeat response.
+- A synthetic recovery rehearsal backed up and restored a synthetic company,
+  Hermes agent, heartbeat run and secret records into a separate disposable
+  database.
+- The recovery bundle checksum, local storage probe file and encrypted-secrets
+  master-key file were verified after extraction into separate paths.
+- Health, empty-company state, UI, image identity and restart checks passed.
+- The tested image architecture is `linux/amd64` only.
+
+These tests prove the isolated recovery and synthetic heartbeat path. They do
+**not** prove a live production Hermes call or restore of the actual production
+dataset. A production-data restore rehearsal and live gateway validation remain
+separate approval-gated activities.
 
 ## Before requesting production approval
 
