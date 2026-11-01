@@ -450,7 +450,7 @@ jobs:
           # rust-cache hashes every installed toolchain into the cache key, not
           # only the active one. Each runner image also ships its own stable
           # Rust, and those disagree across images: 1.98.0 on the RunsOn fleets
-          # against 1.98.1 on ubuntu-24.04. Two runners that agreed on the pin
+          # against 1.98.1 on ubuntu-latest. Two runners that agreed on the pin
           # therefore still computed different keys, and every GitHub-hosted
           # pull request missed this cache while the fleet hit it. Remove every
           # toolchain except the pin, so the key depends on the pinned compiler
@@ -853,7 +853,7 @@ jobs:
           # rust-cache hashes every installed toolchain into the cache key, not
           # only the active one. Each runner image also ships its own stable
           # Rust, and those disagree across images: 1.98.0 on the RunsOn fleets
-          # against 1.98.1 on ubuntu-24.04. Two runners that agreed on the pin
+          # against 1.98.1 on ubuntu-latest. Two runners that agreed on the pin
           # therefore still computed different keys, and every GitHub-hosted
           # pull request missed this cache while the fleet hit it. Remove every
           # toolchain except the pin, so the key depends on the pinned compiler
@@ -988,7 +988,7 @@ jobs:
           # rust-cache hashes every installed toolchain into the cache key, not
           # only the active one. Each runner image also ships its own stable
           # Rust, and those disagree across images: 1.98.0 on the RunsOn fleets
-          # against 1.98.1 on ubuntu-24.04. Two runners that agreed on the pin
+          # against 1.98.1 on ubuntu-latest. Two runners that agreed on the pin
           # therefore still computed different keys, and every GitHub-hosted
           # pull request missed this cache while the fleet hit it. Remove every
           # toolchain except the pin, so the key depends on the pinned compiler
@@ -1234,7 +1234,7 @@ jobs:
           # rust-cache hashes every installed toolchain into the cache key, not
           # only the active one. Each runner image also ships its own stable
           # Rust, and those disagree across images: 1.98.0 on the RunsOn fleets
-          # against 1.98.1 on ubuntu-24.04. Two runners that agreed on the pin
+          # against 1.98.1 on ubuntu-latest. Two runners that agreed on the pin
           # therefore still computed different keys, and every GitHub-hosted
           # pull request missed this cache while the fleet hit it. Remove every
           # toolchain except the pin, so the key depends on the pinned compiler

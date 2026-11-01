@@ -17,10 +17,17 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Free disk on this disposable hosted runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/share/swift /usr/local/lib/android /opt/ghc
+          sudo apt-get clean
+          df -h /
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
       - name: Build exact source without credentials
         run: |
           docker buildx build --target production --platform linux/amd64 --load \
+            --cache-from type=registry,ref=ghcr.io/paperclipai/paperclip:buildcache-amd64 \
             --build-arg PAPERCLIP_BUILD_COMMIT="$(git rev-parse HEAD)" \
             --build-arg PAPERCLIP_BUILD_VERSION=2026.1023.0-hermes-test \
             --tag paperclip-isolated:test .
