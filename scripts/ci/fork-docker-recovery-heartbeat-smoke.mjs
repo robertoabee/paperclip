@@ -28,6 +28,16 @@ function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
 
+async function readOptionalConfig() {
+  const configPath = process.env.PAPERCLIP_CONFIG ?? "/paperclip/instances/default/config.json";
+  try {
+    return JSON.parse(await fs.readFile(configPath, "utf8"));
+  } catch (error) {
+    if (error?.code === "ENOENT") return null;
+    throw error;
+  }
+}
+
 function run(command, args) {
   const result = spawnSync(command, args, { encoding: "utf8", maxBuffer: 4 * 1024 * 1024 });
   if (result.status !== 0) {
@@ -135,12 +145,13 @@ try {
   if (process.env.DATABASE_URL) {
     throw new Error("isolated recovery smoke refuses an externally configured DATABASE_URL");
   }
-  const configPath = process.env.PAPERCLIP_CONFIG ?? "/paperclip/instances/default/config.json";
-  const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-  if (config.database?.mode === "postgres") {
+  const config = await readOptionalConfig();
+  if (config?.database?.mode === "postgres") {
     throw new Error("isolated recovery smoke requires the disposable embedded PostgreSQL database");
   }
-  const embeddedPort = Number(config.database?.embeddedPostgresPort) || 54329;
+  // A fresh local_trusted instance may legitimately have no config.json.
+  // Paperclip's runtime default for embedded PostgreSQL is port 54329.
+  const embeddedPort = Number(config?.database?.embeddedPostgresPort) || 54329;
   const sourceConnectionString = "postgres://paperclip:paperclip@127.0.0.1:" + embeddedPort + "/paperclip";
 
   gateway.listen(0, "127.0.0.1");
@@ -297,9 +308,8 @@ try {
   await restoreSql?.end().catch(() => undefined);
   await sourceSql?.end().catch(() => undefined);
   if (restoreDatabaseName) {
-    const configPath = process.env.PAPERCLIP_CONFIG ?? "/paperclip/instances/default/config.json";
-    const config = JSON.parse(await fs.readFile(configPath, "utf8"));
-    const embeddedPort = Number(config.database?.embeddedPostgresPort) || 54329;
+    const config = await readOptionalConfig();
+    const embeddedPort = Number(config?.database?.embeddedPostgresPort) || 54329;
     const adminUrl = "postgres://paperclip:paperclip@127.0.0.1:" + embeddedPort + "/postgres";
     adminSql = postgres(adminUrl, { max: 1 });
     await adminSql.unsafe('DROP DATABASE IF EXISTS "' + restoreDatabaseName + '"').catch(() => undefined);
