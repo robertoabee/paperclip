@@ -10,6 +10,6 @@ permissions:
 
 jobs:
   ci:
-    # Master requires CODEOWNERS review for .github/**, including this workflow.
-    # The AWS runner group permits pr-trusted.yml@refs/heads/master.
+    # Use this release branch's CI contract, never the moving upstream master.
+    # The upstream AWS gate fails closed to GitHub-hosted runners in this fork.
     uses: ./.github/workflows/pr-trusted.yml

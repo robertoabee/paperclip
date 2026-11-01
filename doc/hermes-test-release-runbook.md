@@ -16,7 +16,8 @@ Only linux/amd64 is qualified by this workflow.
 The smoke has no external network, published ports, host mounts, named volumes,
 production data, provider credentials or live Hermes connection. Its embedded
 PostgreSQL is disposable tmpfs. A restart check proves fresh boot, not persistent
-backup restoration. Hermes route tests mock the gateway: they do not prove a
+backup restoration. The image route smoke uses a synthetic loopback Hermes health endpoint,
+checks stale router bypass and response redaction. It does not prove a
 live production heartbeat. Full heartbeat qualification and a restore rehearsal
 with synthetic records remain required before production approval.
 

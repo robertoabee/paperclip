@@ -2,8 +2,6 @@ name: Fork Docker validation
 on:
   pull_request:
     branches: [base/2026.1023.0]
-  push:
-    branches: [test/2026.1023.0-pr14526]
 permissions:
   contents: read
   packages: write
@@ -12,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   image:
-    if: github.repository == 'robertoabee/paperclip' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.repository == 'robertoabee/paperclip' && github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
