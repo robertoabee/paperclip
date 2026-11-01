@@ -31,6 +31,7 @@ probe
 docker restart "$name" >/dev/null
 probe
 docker exec -i "$name" node --input-type=module < "$(dirname "$0")/fork-hermes-runtime-smoke.mjs"
+docker exec "$name" node --import ./server/node_modules/tsx/dist/loader.mjs scripts/ci/fork-docker-recovery-heartbeat-smoke.mjs
 # Confirm the running image is exactly the candidate, rather than a mutable tag.
 test "$(docker inspect "$name" --format '{{.Image}}')" = "$(docker image inspect "$image" --format '{{.Id}}')"
 printf 'PASS: health, empty companies, UI, restart, image identity; network=none; tmpfs only\n'
