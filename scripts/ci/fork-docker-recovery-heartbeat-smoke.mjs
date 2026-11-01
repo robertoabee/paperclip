@@ -7,17 +7,15 @@ import os from "node:os";
 import http from "node:http";
 import { once } from "node:events";
 import { spawnSync } from "node:child_process";
-import {
-  ensurePostgresDatabase,
-  runDatabaseBackup,
-  runDatabaseRestore,
-} from "@paperclipai/db";
-import {
-  resolveDefaultSecretsKeyFilePath,
-  resolveDefaultStorageDir,
-} from "@paperclipai/shared/home-paths";
-
-const requireFromDb = createRequire("/app/packages/db/package.json");
+// Resolve workspace packages from the server's production dependency tree.
+ // The smoke script lives at /app/scripts/ci, outside the server workspace, so
+ // bare ESM package imports cannot see /app/server/node_modules in the runtime image.
+const requireFromServer = createRequire("/app/server/package.json");
+const dbEntry = requireFromServer.resolve("@paperclipai/db");
+const sharedHomePathsEntry = requireFromServer.resolve("@paperclipai/shared/home-paths");
+const { ensurePostgresDatabase, runDatabaseBackup, runDatabaseRestore } = await import(dbEntry);
+const { resolveDefaultSecretsKeyFilePath, resolveDefaultStorageDir } = await import(sharedHomePathsEntry);
+const requireFromDb = createRequire(dbEntry);
 const postgres = requireFromDb("postgres");
 const apiBase = "http://127.0.0.1:3100/api";
 const syntheticApiKey = "synthetic-ci-hermes-gateway-key";
