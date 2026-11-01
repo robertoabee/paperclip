@@ -288,11 +288,11 @@ try {
   const restoredCompany = await restoreSql.unsafe("SELECT id::text AS id, name FROM companies WHERE id = $1", [company.id]);
   const restoredAgent = await restoreSql.unsafe("SELECT id::text AS id, name, adapter_type FROM agents WHERE id = $1", [agent.id]);
   const restoredRun = await restoreSql.unsafe("SELECT id::text AS id, status FROM heartbeat_runs WHERE id = $1", [invoked.id]);
-  const restoredSecrets = await restoreSql.unsafe("SELECT count(*)::int AS count FROM company_secrets WHERE company_id = $1", [company.id]);
+  const restoredSecretRows = await restoreSql.unsafe("SELECT count(*)::int AS count FROM company_secrets WHERE company_id = $1", [company.id]);
   assert.equal(restoredCompany[0]?.name, companyName);
   assert.equal(restoredAgent[0]?.adapter_type, "hermes_gateway");
   assert.equal(restoredRun[0]?.status, "succeeded");
-  assert.equal(restoredSecrets[0]?.count, sourceSecrets[0].count);
+  assert.equal(restoredSecretRows[0]?.count, sourceSecrets[0].count);
   console.log("PASS: database backup/restore preserves synthetic company, Hermes agent, heartbeat run and secret records");
   console.log("PASS: recovery bundle checksum, local storage file and encrypted-secrets master-key file restored into separate paths");
 } finally {
