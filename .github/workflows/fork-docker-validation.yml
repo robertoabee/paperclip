@@ -1,0 +1,52 @@
+name: Fork Docker validation
+on:
+  pull_request:
+    branches: [base/2026.1023.0]
+  push:
+    branches: [test/2026.1023.0-pr14526]
+permissions:
+  contents: read
+  packages: write
+concurrency:
+  group: fork-docker-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  image:
+    if: github.repository == 'robertoabee/paperclip' && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e
+      - name: Build exact source without credentials
+        run: |
+          docker buildx build --target production --platform linux/amd64 --load \
+            --build-arg PAPERCLIP_BUILD_COMMIT="$(git rev-parse HEAD)" \
+            --build-arg PAPERCLIP_BUILD_VERSION=2026.1023.0-hermes-test \
+            --tag paperclip-isolated:test .
+      - name: Validate isolated runtime and restart
+        run: bash scripts/ci/fork-docker-smoke.sh paperclip-isolated:test
+      - name: Publish only the tested image and record registry digest
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          image="ghcr.io/robertoabee/paperclip-hermes-test:sha-$(git rev-parse HEAD)"
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+          trap 'docker logout ghcr.io >/dev/null 2>&1' EXIT
+          docker tag paperclip-isolated:test "$image"
+          docker push "$image"
+          mkdir -p image-artifact
+          docker image inspect "$image" --format '{{index .RepoDigests 0}}' > image-artifact/image-reference.txt
+          grep -Eq '^ghcr.io/robertoabee/paperclip-hermes-test@sha256:[a-f0-9]{64}$' image-artifact/image-reference.txt
+          git rev-parse HEAD > image-artifact/source-commit.txt
+          printf 'PASS: isolated smoke and restart; linux/amd64\n' > image-artifact/validation.txt
+          cat image-artifact/image-reference.txt >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: paperclip-isolated-${{ github.sha }}
+          path: image-artifact/
+          retention-days: 3
+          compression-level: 0
