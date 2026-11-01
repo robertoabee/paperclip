@@ -69,6 +69,21 @@ export type AiConnectionBinding = z.infer<typeof aiConnectionBindingSchema>;
 export const aiConnectionMetadataSchema = z.object({ ...requirement, routing: aiProviderRoutingSchema.optional() }).strict();
 export type AiConnectionMetadata = z.infer<typeof aiConnectionMetadataSchema>;
 
+/** Provider credentials owned by Paperclip, rather than a remote gateway. */
+const MANAGED_ADAPTERS = new Set([
+  "paperclip_runner", "claude_local", "codex_local", "opencode_local",
+  "grok_local", "hermes_local", "gemini_local", "pi_local", "copilot_runtime",
+]);
+const SELF_AUTHENTICATED_ADAPTERS = new Set([
+  "cursor_cloud", "hermes_gateway", "kimi_local", "cursor", "openclaw_gateway",
+]);
+export function isAiConnectionManagedAdapter(adapterType: string): boolean {
+  return MANAGED_ADAPTERS.has(adapterType);
+}
+export function isAiConnectionSelfAuthenticatedAdapter(adapterType: string): boolean {
+  return SELF_AUTHENTICATED_ADAPTERS.has(adapterType);
+}
+
 /** Existing integrations only. This table describes compatibility, never routing. */
 export const AI_CONNECTION_CAPABILITIES: Record<
   AiProvider,
@@ -118,8 +133,11 @@ export function isAiConnectionCompatible(
   runnerProvider?: unknown,
   acpxAgent?: unknown,
 ): boolean {
-  adapterType = aiRoutingHarness(adapterType, runnerProvider, acpxAgent);
-  if ("routing" in requirement && requirement.routing) return requirement.method === "api_key" && isAiRoutingCompatible(requirement.routing, adapterType);
+  const harness = aiRoutingHarness(adapterType, runnerProvider, acpxAgent);
+  if ("routing" in requirement && requirement.routing) return requirement.method === "api_key" && isAiRoutingCompatible(requirement.routing, harness);
+  // Gateway adapters manage their own authentication and never inherit local keys.
+  if (isAiConnectionSelfAuthenticatedAdapter(adapterType)) return true;
+  adapterType = harness;
   // A fixed binding contains identity only. The service checks authoritative
   // connection metadata before resolving credentials or running the harness.
   if ("mode" in requirement && requirement.mode !== "responsible_user" && requirement.method === "api_key")

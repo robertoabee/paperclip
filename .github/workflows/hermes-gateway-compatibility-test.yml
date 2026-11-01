@@ -1,0 +1,32 @@
+name: Hermes Gateway compatibility (fork test)
+
+on:
+  pull_request:
+    branches:
+      - base/2026.1023.0
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-compatibility:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Typecheck shared contracts
+        run: pnpm --filter @paperclipai/shared typecheck
+      - name: Test self-authenticated gateway compatibility
+        run: pnpm --dir packages/shared exec vitest --config vitest.config.ts src/ai-connections-self-authenticated.test.ts --run
+      - name: Test Hermes gateway environment route
+        run: pnpm --dir server exec vitest --config vitest.config.ts src/__tests__/agent-test-environment-routes.test.ts --run --testTimeout=30000

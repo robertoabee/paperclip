@@ -18,7 +18,7 @@ concurrency:
 jobs:
   gate:
     name: Select trusted runner
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     outputs:
       runner: ${{ steps.route.outputs.runner }}
@@ -48,7 +48,7 @@ jobs:
         run: |
           set -u
 
-          github_runner='ubuntu-latest'
+          github_runner='ubuntu-24.04'
           aws_runner='runs-on/fleet=paperclip-public-pr-x64/env=public-ci'
 
           fail_closed() {
@@ -435,7 +435,7 @@ jobs:
           set -uo pipefail
 
           # release-verify.yml runs on a single post-merge fleet image; the
-          # gate here can route to ubuntu-latest or the public PR fleet, so
+          # gate here can route to ubuntu-24.04 or the public PR fleet, so
           # this tolerates an image without rustup instead of failing every
           # pull request. Without the pin the cache key simply will not match.
           if ! command -v rustup >/dev/null 2>&1; then
@@ -838,7 +838,7 @@ jobs:
           set -uo pipefail
 
           # release-verify.yml runs on a single post-merge fleet image; the
-          # gate here can route to ubuntu-latest or the public PR fleet, so
+          # gate here can route to ubuntu-24.04 or the public PR fleet, so
           # this tolerates an image without rustup instead of failing every
           # pull request. Without the pin the cache key simply will not match.
           if ! command -v rustup >/dev/null 2>&1; then
@@ -973,7 +973,7 @@ jobs:
           set -uo pipefail
 
           # release-verify.yml runs on a single post-merge fleet image; the
-          # gate here can route to ubuntu-latest or the public PR fleet, so
+          # gate here can route to ubuntu-24.04 or the public PR fleet, so
           # this tolerates an image without rustup instead of failing every
           # pull request. Without the pin the cache key simply will not match.
           if ! command -v rustup >/dev/null 2>&1; then
@@ -1219,7 +1219,7 @@ jobs:
           set -uo pipefail
 
           # release-verify.yml runs on a single post-merge fleet image; the
-          # gate here can route to ubuntu-latest or the public PR fleet, so
+          # gate here can route to ubuntu-24.04 or the public PR fleet, so
           # this tolerates an image without rustup instead of failing every
           # pull request. Without the pin the cache key simply will not match.
           if ! command -v rustup >/dev/null 2>&1; then

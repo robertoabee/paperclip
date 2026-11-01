@@ -61,3 +61,15 @@ packages/paperclip-runner/test-fixtures/pi-acp/**
 !packages/paperclip-runner/src/**/*.test.tsx
 
 packages/grok-acp/bin
+
+# Never include operator credentials or local state in test/release images.
+.env
+.env.*
+!.env.example
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/credentials.json
+**/auth.json
