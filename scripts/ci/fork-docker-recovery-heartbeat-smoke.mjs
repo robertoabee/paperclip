@@ -22,6 +22,7 @@ const postgres = requireFromDb("postgres");
 const apiBase = "http://127.0.0.1:3100/api";
 const syntheticApiKey = "synthetic-ci-hermes-gateway-key";
 const syntheticOutput = "CI_SYNTHETIC_HERMES_HEARTBEAT_COMPLETED";
+let agentApiToken = null;
 const terminalStatuses = new Set(["succeeded", "failed", "timed_out", "cancelled", "interrupted"]);
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -42,10 +43,13 @@ async function readRequestBody(req) {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-async function apiRequest(route, method = "GET", body) {
+async function apiRequest(route, method = "GET", body, bearerToken) {
+  const headers = {};
+  if (body !== undefined) headers["content-type"] = "application/json";
+  if (bearerToken) headers.authorization = "Bearer " + bearerToken;
   const response = await fetch(apiBase + route, {
     method,
-    headers: body === undefined ? undefined : { "content-type": "application/json" },
+    headers: Object.keys(headers).length ? headers : undefined,
     body: body === undefined ? undefined : JSON.stringify(body),
     signal: AbortSignal.timeout(10_000),
   });
@@ -53,9 +57,9 @@ async function apiRequest(route, method = "GET", body) {
   let payload = null;
   try { payload = raw ? JSON.parse(raw) : null; } catch { /* report status only */ }
   if (!response.ok) {
-    const message = typeof payload?.error === "string"
-      ? payload.error.replaceAll(syntheticApiKey, "[redacted]").slice(0, 300)
-      : "";
+    let message = typeof payload?.error === "string" ? payload.error : "";
+    for (const secret of [syntheticApiKey, agentApiToken].filter(Boolean)) message = message.replaceAll(secret, "[redacted]");
+    message = message.slice(0, 300);
     throw new Error(method + " " + route + " returned HTTP " + response.status + (message ? ": " + message : ""));
   }
   return payload;
@@ -168,17 +172,21 @@ try {
   assert.equal(agent.adapterType, "hermes_gateway");
   assert.ok(!JSON.stringify(agent).includes(syntheticApiKey), "agent API response must redact the synthetic key");
 
+  const agentKey = await apiRequest("/agents/" + agent.id + "/keys", "POST", { name: "CI heartbeat qualification" });
+  assert.ok(typeof agentKey?.token === "string" && agentKey.token.length > 20, "Paperclip must issue a one-time synthetic agent API token");
+  agentApiToken = agentKey.token;
   const invoked = await apiRequest("/agents/" + agent.id + "/heartbeat/invoke", "POST", {
     reason: "Controlled synthetic Hermes Gateway heartbeat qualification",
     idempotencyKey: "ci-hermes-heartbeat-" + randomUUID(),
-  });
+  }, agentApiToken);
   assert.ok(invoked?.id, "manual heartbeat invocation must create a run");
 
   const deadline = Date.now() + 60_000;
   let completedRun = null;
   while (Date.now() < deadline) {
     completedRun = await apiRequest("/heartbeat-runs/" + invoked.id);
-    assert.ok(!JSON.stringify(completedRun).includes(syntheticApiKey), "heartbeat API must not expose the synthetic key");
+    assert.ok(!JSON.stringify(completedRun).includes(syntheticApiKey), "heartbeat API must not expose the synthetic gateway key");
+    assert.ok(!JSON.stringify(completedRun).includes(agentApiToken), "heartbeat API must not expose the synthetic agent token");
     if (terminalStatuses.has(completedRun.status)) break;
     await wait(250);
   }
